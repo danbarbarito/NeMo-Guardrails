@@ -512,10 +512,15 @@ def remove_action_intent_identifiers(lines: List[str]) -> List[str]:
     """Removes the action/intent identifiers."""
     return [
         s.replace("bot intent: ", "")
+        .replace("bot intent ", "")
         .replace("bot action: ", "")
+        .replace("bot action ", "")
         .replace("bot say: ", "")
+        .replace("bot say ", "")
         .replace("user intent: ", "")
+        .replace("user intent ", "")
         .replace("user action: ", "")
+        .replace("user action ", "")
         for s in lines
     ]
 
