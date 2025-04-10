@@ -258,15 +258,18 @@ def get_colang_history(
                     # Found parent of current group
                     if event.name == InternalEvents.BOT_INTENT_LOG:
                         new_history.append(events_to_dialog_history([event]))
-                        new_history.append(events_to_dialog_history(action_group))
+                        new_history.append(
+                            events_to_dialog_history(action_group))
                     elif event.arguments["flow_id"] is not None:
-                        new_history.append(events_to_dialog_history(action_group))
+                        new_history.append(
+                            events_to_dialog_history(action_group))
                         new_history.append(events_to_dialog_history([event]))
                     new_history.append("")
                 else:
                     # New unrelated intent
                     if action_group:
-                        new_history.append(events_to_dialog_history(action_group))
+                        new_history.append(
+                            events_to_dialog_history(action_group))
                         new_history.append("")
                     new_history.append(events_to_dialog_history([event]))
                     new_history.append("")
@@ -510,6 +513,7 @@ def remove_action_intent_identifiers(lines: List[str]) -> List[str]:
     return [
         s.replace("bot intent: ", "")
         .replace("bot action: ", "")
+        .replace("bot say: ", "")
         .replace("user intent: ", "")
         .replace("user action: ", "")
         for s in lines
@@ -534,6 +538,13 @@ def get_first_user_intent(strings: List[str]) -> Optional[str]:
     return None
 
 
+def quote_bot_say(line: str) -> str:
+    if line.startswith("bot say "):
+        message = line[len("bot say "):]
+        return f"{line}\nbot say \"{message}\""
+    return line
+
+
 def get_first_bot_intent(strings: List[str]) -> Optional[str]:
     """Returns first bot intent."""
     for string in strings:
@@ -542,10 +553,23 @@ def get_first_bot_intent(strings: List[str]) -> Optional[str]:
     return None
 
 
+def escape_bot_action(action: str) -> str:
+    """Escape invalid characters from the bot action."""
+
+    # Removes trailing new lines and comments
+    result = re.sub(r'\n.*$', '', action)
+
+    # Wrap bot say actions in quotes if necessary
+    result = quote_bot_say(result)
+
+    return result
+
+
 def get_first_bot_action(strings: List[str]) -> Optional[str]:
     """Returns first bot action."""
     action_started = False
     action: str = ""
+
     for string in strings:
         if string.startswith("bot action: "):
             if action != "":
