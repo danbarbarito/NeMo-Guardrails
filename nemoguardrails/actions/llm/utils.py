@@ -560,8 +560,8 @@ def get_first_bot_action(strings: List[str]) -> Optional[str]:
             action_started = False
             continue
         elif action != "":
-            return action.rstrip()
-    return action.rstrip()
+            return action
+    return action
 
 
 def escape_flow_name(name: str) -> str:
