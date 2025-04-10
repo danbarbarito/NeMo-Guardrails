@@ -510,19 +510,15 @@ def get_multiline_response(s: str) -> str:
 
 def remove_action_intent_identifiers(lines: List[str]) -> List[str]:
     """Removes the action/intent identifiers."""
-    return [
+    lines = [
         s.replace("bot intent: ", "")
-        .replace("bot intent ", "")
         .replace("bot action: ", "")
-        .replace("bot action ", "")
-        .replace("bot say: ", "")
-        .replace("bot say ", "")
         .replace("user intent: ", "")
-        .replace("user intent ", "")
         .replace("user action: ", "")
-        .replace("user action ", "")
         for s in lines
     ]
+
+    return lines
 
 
 def get_initial_actions(strings: List[str]) -> List[str]:
@@ -550,6 +546,16 @@ def quote_bot_say(line: str) -> str:
     return line
 
 
+def correct_bot_action(line: str) -> str:
+    match = re.search(r'"(.*)"', line, re.DOTALL)
+    if match:
+        message = match.group(1).strip()
+        return f'bot say "{message}"'
+    else:
+        # fallback: no quoted part, return as-is or handle differently
+        return f'bot say "{line.strip()}"'
+
+
 def get_first_bot_intent(strings: List[str]) -> Optional[str]:
     """Returns first bot intent."""
     for string in strings:
@@ -558,24 +564,14 @@ def get_first_bot_intent(strings: List[str]) -> Optional[str]:
     return None
 
 
-def escape_bot_action(action: str) -> str:
-    """Escape invalid characters from the bot action."""
-
-    # Removes trailing new lines and comments
-    result = re.sub(r'\n.*$', '', action)
-
-    # Wrap bot say actions in quotes if necessary
-    result = quote_bot_say(result)
-
-    return result
-
-
 def get_first_bot_action(strings: List[str]) -> Optional[str]:
     """Returns first bot action."""
     action_started = False
+    fallback_action: str = ""
     action: str = ""
 
     for string in strings:
+        fallback_action = string
         if string.startswith("bot action: "):
             if action != "":
                 action += "\n"
@@ -590,7 +586,12 @@ def get_first_bot_action(strings: List[str]) -> Optional[str]:
             continue
         elif action != "":
             return action
-    return action
+
+    result = action if action != "" else fallback_action
+
+    result = correct_bot_action(result)
+
+    return result
 
 
 def escape_flow_name(name: str) -> str:
